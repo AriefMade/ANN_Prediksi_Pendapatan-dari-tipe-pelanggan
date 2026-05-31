@@ -1,0 +1,144 @@
+================================================================================
+LAPORAN PROYEK BUSINESS INTELLIGENCE: 
+PREDIKSI PENDAPATAN PELANGGAN MENGGUNAKAN ARTIFICIAL NEURAL NETWORK (ANN)
+================================================================================
+
+Laporan ini menyajikan penjelasan menyeluruh mengenai sistem prediksi pendapatan 
+pelanggan berbasis machine learning yang diimplementasikan pada dataset perusahaan 
+retail online menggunakan metode CRISP-DM (Cross-Industry Standard Process for 
+Data Mining).
+
+--------------------------------------------------------------------------------
+1. BUSINESS UNDERSTANDING (Analisis Kebutuhan Bisnis)
+--------------------------------------------------------------------------------
+A. Latar Belakang:
+   Perusahaan retail online mengumpulkan banyak data transaksi dari pelanggan.
+   Untuk merumuskan strategi pemasaran yang efektif, perusahaan perlu mengetahui 
+   potensi nilai pendapatan (Customer Lifetime Value) masa depan dari masing-masing 
+   pelanggan.
+
+B. Masalah:
+   Bagaimana cara memprediksi total pendapatan (Total_Revenue) dari setiap 
+   pelanggan secara akurat berdasarkan karakteristik demografis dan riwayat belanja 
+   mereka?
+
+C. Tujuan Proyek:
+   - Membangun model Artificial Neural Network (ANN) regresi untuk memprediksi 
+     potensi pendapatan pelanggan.
+   - Menghasilkan analisis segmentasi geografis dan kategori untuk membantu 
+     pengambilan keputusan bisnis (Business Intelligence).
+
+--------------------------------------------------------------------------------
+2. DATA UNDERSTANDING (Pemahaman Data)
+--------------------------------------------------------------------------------
+Dataset yang digunakan adalah 'ann_business_intelligence_dataset.csv' dengan ukuran 
+500 baris dan 9 kolom. Kolom-kolom tersebut adalah:
+
+- Customer_ID (Objek): Identitas unik pelanggan (dihapus saat pemodelan).
+- Age (Integer): Umur pelanggan (rentang 25 - 60 tahun).
+- City (Objek): Kota asal (Jakarta, Bandung, Denpasar, Medan, Surabaya).
+- Number_of_Transactions (Integer): Jumlah transaksi yang dilakukan.
+- Average_Transaction_Value (Float): Rata-rata nilai belanja per transaksi.
+- Favorite_Product_Category (Objek): Kategori produk terfavorit (Electronics, 
+  Books, Fashion, Beauty, Groceries).
+- Monthly_Purchase_Frequency (Float): Frekuensi belanja bulanan.
+- Months_as_Customer (Integer): Masa berlangganan pelanggan (tenure) dalam bulan.
+- Total_Revenue (Float): Total pendapatan yang dihasilkan (TARGET VARIABEL).
+
+--------------------------------------------------------------------------------
+3. DATA PREPARATION (Persiapan & Preprocessing Data)
+--------------------------------------------------------------------------------
+A. Feature Engineering:
+   Dibuat satu fitur baru bernama 'Estimated_Historical_Spend' yang dihitung dari 
+   perkalian 'Number_of_Transactions' dengan 'Average_Transaction_Value'. Fitur ini 
+   mewakili total nilai belanja historis kasar pelanggan.
+
+B. Data Splitting:
+   Dataset dibagi menjadi 80% Data Latih (Train Set) dan 20% Data Uji (Test Set) 
+   menggunakan 'train_test_split' dengan random_state=42.
+
+C. Preprocessing Pipeline (Scikit-Learn):
+   - Fitur Numerik: Diisi nilai kosong menggunakan nilai tengah (median), kemudian 
+     distandarisasi menggunakan 'StandardScaler'.
+   - Fitur Kategorikal: Diisi nilai kosong menggunakan nilai tersering (mode), lalu 
+     diubah ke representasi biner menggunakan 'OneHotEncoder(handle_unknown='ignore')'.
+
+D. Rekayasa Transformasi Target (PENTING):
+   - Model Awal: Menggunakan transformasi logaritma (np.log1p) pada variabel target 
+     y. Metode ini merusak hubungan linier data dan menghasilkan performa R2 yang 
+     sangat buruk (hanya 5.04%).
+   - Model Perbaikan: Mengganti log-transform dengan Target Standard Scaling 
+     (StandardScaler) pada y sebelum pelatihan. Hasilnya dikembalikan ke skala rupiah 
+     asli menggunakan '.inverse_transform()'. Perubahan ini menaikkan performa R2 
+     secara luar biasa menjadi 90.73%.
+
+--------------------------------------------------------------------------------
+4. MODELING (Pemodelan Artificial Neural Network)
+--------------------------------------------------------------------------------
+Model dibangun menggunakan Keras Sequential dengan arsitektur teregularisasi yang 
+dirancang khusus untuk dataset kecil (500 baris) agar tidak mengalami overfitting:
+
+A. Arsitektur Jaringan:
+   - Input Layer: Menyesuaikan jumlah fitur hasil preprocessing.
+   - Hidden Layer 1: 16 neuron, aktivasi ReLU, ditambah L2 Regularization (0.001) 
+     dan Dropout 10% untuk mencegah overfitting.
+   - Hidden Layer 2: 8 neuron, aktivasi ReLU, ditambah L2 Regularization (0.001).
+   - Output Layer: 1 neuron, aktivasi Linear (regresi).
+
+B. Parameter Pelatihan:
+   - Optimizer: Adam dengan laju pembelajaran (learning rate) disesuaikan ke 0.01.
+   - Loss Function: Mean Squared Error (MSE).
+   - Metrik Tambahan: Mean Absolute Error (MAE).
+   - Callback: EarlyStopping memantau 'val_loss' dengan patience=15 untuk menghentikan 
+     proses belajar jika sudah tidak ada perbaikan.
+   - Training Epochs: Maksimal 150 epoch dengan ukuran batch (batch_size) 16.
+
+--------------------------------------------------------------------------------
+5. EVALUATION (Evaluasi Model & Hasil Akhir)
+--------------------------------------------------------------------------------
+Perbandingan performa model sebelum dan sesudah optimasi arsitektur dan penanganan 
+target variabel:
+
+Metrik            Sebelum Modifikasi        Setelah Modifikasi (Tuned)
+----------------------------------------------------------------------
+R² Score          0.0504 (5.04%)            0.9073 (90.73%)
+MAPE              96.16%                    23.09%
+MAE               Rp 343.411,93             Rp 117.816,49
+RMSE              Rp 462.444,31             Rp 144.502,49
+
+Analisis Evaluasi:
+Model baru berhasil memprediksi pendapatan dengan tingkat akurasi yang sangat tinggi. 
+Skor R2 sebesar 90.73% menunjukkan model mampu menjelaskan 90.7% variabilitas data 
+aktual pendapatan pelanggan, dengan rata-rata persentase kesalahan (MAPE) sebesar 
+23.09%.
+
+--------------------------------------------------------------------------------
+6. BUSINESS INSIGHTS & STRATEGIC RECOMMENDATIONS (Insight & Rekomendasi Manajerial)
+--------------------------------------------------------------------------------
+Berdasarkan visualisasi dan pengelompokan data pada notebook, diperoleh insight 
+berikut untuk mendukung keputusan bisnis cerdas:
+
+A. Segmentasi Wilayah (Kota):
+   - Rata-rata prediksi pendapatan per kota menempatkan Jakarta (Rp 1.168.189) 
+     dan Bandung (Rp 1.006.525) di peringkat teratas.
+   - Rekomendasi: Kampanye pemasaran eksklusif, penawaran premium, dan strategi 
+     CRM harus difokuskan di Jakarta dan Bandung. Untuk wilayah Denpasar yang 
+     potensinya lebih rendah (Rp 853.791), luncurkan strategi promo bundling 
+     (misal menggabungkan produk terlaris dengan kategori lain) untuk mendongkrak 
+     nilai belanja rata-rata.
+
+B. Analisis Kategori Produk Terfavorit:
+   - Pelanggan dengan produk favorit Groceries (Rata-rata pendapatan: Rp 1.049.194) 
+     dan Beauty (Rata-rata pendapatan: Rp 1.015.166) menyumbang kontribusi terbesar. 
+     Produk Beauty juga memiliki transaksi rata-rata tertinggi per belanja (Rp 365.569).
+   - Rekomendasi: Luncurkan sistem langganan bulanan (*subscription box*) untuk produk 
+     Groceries untuk menjamin stabilitas pendapatan rutin bulanan. Tingkatkan 
+     personalisasi rekomendasi pada produk Beauty untuk menaikkan nilai belanja.
+
+C. Analisis Loyalitas & Masa Berlangganan (Tenure):
+   - Pelanggan lama (>3 tahun) memiliki rata-rata belanja Rp 1.012.145 (sekitar 11% 
+     lebih tinggi dibanding pelanggan baru di bawah 1 tahun yang senilai Rp 912.735).
+   - Rekomendasi: Pertahankan loyalitas pelanggan lama dengan program "Loyalty 
+     Milestone Rewards" (misal voucher eksklusif pada hari jadi ke-2 dan ke-3 bersama 
+     perusahaan) untuk memperpanjang nilai retensi dan lifetime value (LTV).
+================================================================================
